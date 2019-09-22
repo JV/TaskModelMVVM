@@ -1,4 +1,4 @@
-package com.example.taskmodelmvvm.adapters;
+package com.example.taskmodelmvvm.viewmodel;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -24,13 +24,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.taskmodelmvvm.MainActivity;
 import com.example.taskmodelmvvm.R;
-import com.example.taskmodelmvvm.drawViews.LineView;
-import com.example.taskmodelmvvm.entity.ElementModel;
-import com.example.taskmodelmvvm.viewmodel.ElementViewModel;
+import com.example.taskmodelmvvm.persistance.ElementModel;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ElementModelRwAdapter extends ListAdapter<ElementModel,
@@ -38,6 +37,7 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
 
 
     private OnItemClickListener listener;
+    private OnLongTaskDoneListener taskListener;
     private float screenWidth;
     private float screenHeight;
     private List<List<Integer>> coordinates;
@@ -46,13 +46,16 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
     private Context context;
     private ElementViewModel elementViewModel;
     private MainActivity mainActivity;
+    private List<ElementModel> elementModels = new ArrayList<>();
 
 
-    public ElementModelRwAdapter(float screenHeight, Context context, List<List<Integer>> coordinates, MainActivity mainActivity) {
+    public ElementModelRwAdapter(float screenHeight, Context context,
+                                 List<List<Integer>> coordinates, MainActivity mainActivity) {
         super(DIFF_CALLBACK);
         this.mainActivity = mainActivity;
         this.context = context;
-        elementViewModel = ViewModelProviders.of(this.mainActivity).get(ElementViewModel.class);
+//        elementViewModel = ViewModelProviders.of(this.mainActivity).get(ElementViewModel.class);
+
 
         this.screenHeight = screenHeight;
         Gson gson = new Gson();
@@ -61,6 +64,9 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
         Type type = new TypeToken<List<List<Integer>>>() {
         }.getType();
         this.coordinates = gson.fromJson(json, type);
+//        if (taskListener != null) {
+//            taskListener.onLongTaskDoneListener(this);
+//        }
     }
 
     private static final DiffUtil.ItemCallback<ElementModel> DIFF_CALLBACK = new DiffUtil.ItemCallback<ElementModel>() {
@@ -134,7 +140,8 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
                 LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(20, stopY);
 
                 holder.connectionHolders.addView(lineView, layoutParams);
-                if (position < coordinates.get(i).get(0) | position > coordinates.get(i).get(1) | coordinates.get(i).get(1) == -1) {
+                if (position < coordinates.get(i).get(0) | position > coordinates.get(i).get(1) |
+                        coordinates.get(i).get(1) == -1) {
 
                     LinearLayout.LayoutParams layoutParams2 = new LinearLayout.LayoutParams(20, stopY);
                     lineView.setLayoutParams(layoutParams2);
@@ -148,7 +155,8 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
 
                             matchFirst = true;
 
-                            LinearLayout.LayoutParams layoutParams3 = new LinearLayout.LayoutParams(20, stopY / 2);
+                            LinearLayout.LayoutParams layoutParams3 = new LinearLayout.LayoutParams
+                                    (20, stopY / 2);
                             layoutParams3.gravity = Gravity.BOTTOM;
                             lineView.setLayoutParams(layoutParams3);
                             lineView.setVisibility(View.VISIBLE);
@@ -157,14 +165,16 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
 
                             matchLast = true;
 
-                            LinearLayout.LayoutParams layoutParams4 = new LinearLayout.LayoutParams(20, stopY / 2);
+                            LinearLayout.LayoutParams layoutParams4 = new LinearLayout.LayoutParams
+                                    (20, stopY / 2);
                             lineView.setLayoutParams(layoutParams4);
                             lineView.setVisibility(View.VISIBLE);
 
                         }
                     } else {
 
-                        LinearLayout.LayoutParams layoutParams5 = new LinearLayout.LayoutParams(20, stopY);
+                        LinearLayout.LayoutParams layoutParams5 = new LinearLayout.LayoutParams
+                                (20, stopY);
                         lineView.setLayoutParams(layoutParams5);
                         lineView.setVisibility(View.VISIBLE);
                     }
@@ -226,5 +236,13 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
 
     public void setOnClickListener(OnItemClickListener listener) {
         this.listener = listener;
+    }
+
+    public interface OnLongTaskDoneListener {
+        void onLongTaskDoneListener(ElementModelRwAdapter elementModelRwAdapter);
+    }
+
+    public void setOnLongTaskDoneListener(OnLongTaskDoneListener listener) {
+        this.taskListener = listener;
     }
 }

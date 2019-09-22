@@ -5,61 +5,69 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
 
-import com.example.taskmodelmvvm.entity.ElementModel;
-import com.example.taskmodelmvvm.repository.ElementModelRepository;
+import com.example.taskmodelmvvm.persistance.ElementModel;
+import com.example.taskmodelmvvm.persistance.ElementModelRepository;
 
 import java.util.List;
 
 public class ElementViewModel extends AndroidViewModel {
 
-    private ElementModelRepository repository;
     private LiveData<List<ElementModel>> allElements;
-
-    private LiveData<List<ElementModel>> allElementsMoved;
-
-    private ElementModelRepository repositoryMoved;
-
+    private ElementModelRepository elementModelRepository;
+    private List<ElementModel> elementModels;
 
     public ElementViewModel(@NonNull Application application) {
         super(application);
-        repository = new ElementModelRepository(application);
-        allElements = repository.getAllElements();
-        repositoryMoved = new ElementModelRepository(application);
-        allElementsMoved = repositoryMoved.getAllElementsMoved();
+        elementModelRepository = ElementModelRepository.getInstance(application);
+        allElements = elementModelRepository.getAllElements();
+        elementModels = elementModelRepository.getAllElementsList();
+    }
+
+    public void moveElement(int fromPosition, int toPosition) {
+        elementModelRepository.move(fromPosition, toPosition);
     }
 
     public void insert(ElementModel elementModel) {
-        repository.insert(elementModel);
+        elementModelRepository.insert(elementModel);
     }
 
     public void update(ElementModel elementModel) {
-        repository.update(elementModel);
+        elementModelRepository.update(elementModel);
     }
 
     public void delete(ElementModel elementModel) {
-        repository.delete(elementModel);
+        elementModelRepository.delete(elementModel);
     }
 
     public void deleteAllElements() {
-        repository.deleteAllElements();
+        elementModelRepository.deleteAllElements();
     }
+
+
 
     public LiveData<List<ElementModel>> getAllElements() {
         if (allElements == null) {
-            allElements = repository.getAllElements();
+            allElements = elementModelRepository.getAllElements();
         }
         return allElements;
     }
 
     public LiveData<List<ElementModel>> getAllElementsMoved() {
-        if (allElementsMoved == null) {
-            allElementsMoved = repositoryMoved.getAllElementsMoved();
+        if (allElements == null) {
+            allElements = elementModelRepository.getAllElementsMoved();
         }
-        return allElementsMoved;
+        return allElements;
     }
 
-    public void moveElement(int fromPosition, int toPosition) {
-        repositoryMoved.move(fromPosition, toPosition);
+    public List<ElementModel> getAllElementsList() {
+        if (elementModels == null) {
+            elementModels = elementModelRepository.getAllElementsList();
+        }
+        return elementModels;
     }
+
+
 }

@@ -1,4 +1,4 @@
-package com.example.taskmodelmvvm.drawViews;
+package com.example.taskmodelmvvm.viewmodel;
 
 import android.content.Context;
 import android.graphics.Canvas;

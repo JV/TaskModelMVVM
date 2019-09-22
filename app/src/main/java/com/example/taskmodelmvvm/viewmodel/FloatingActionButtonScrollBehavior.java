@@ -1,4 +1,4 @@
-package com.example.taskmodelmvvm.behavior;
+package com.example.taskmodelmvvm.viewmodel;
 
 import android.annotation.SuppressLint;
 import android.content.Context;

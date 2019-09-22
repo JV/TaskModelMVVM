@@ -1,4 +1,4 @@
-package com.example.taskmodelmvvm.threads;
+package com.example.taskmodelmvvm;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -10,8 +10,7 @@ import android.os.Process;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import com.example.taskmodelmvvm.MainActivity;
-import com.example.taskmodelmvvm.entity.ElementModel;
+import com.example.taskmodelmvvm.persistance.ElementModel;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -58,7 +57,7 @@ public class UiHandlerThread extends HandlerThread {
 
 
                 sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-                elementModels = (List<ElementModel>) msg.getData().getSerializable("rawData");
+                elementModels = msg.getData().getParcelable("rawData");
 
                 switch (msg.what) {
                     case UI_TASK:

@@ -1,21 +1,23 @@
-package com.example.taskmodelmvvm.database;
+package com.example.taskmodelmvvm.persistance;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
-import com.example.taskmodelmvvm.dao.ElementModelDao;
-import com.example.taskmodelmvvm.entity.ElementModel;
+import java.time.Instant;
 
 @Database(entities = ElementModel.class, version = 1)
 public abstract class ElementModelDatabase extends RoomDatabase {
 
+    public static final String DATABASE_NAME = "elementModelDatabase.db";
     private static ElementModelDatabase instance;
 
     public abstract ElementModelDao elementModelDao();
@@ -23,7 +25,7 @@ public abstract class ElementModelDatabase extends RoomDatabase {
     public static synchronized ElementModelDatabase getInstance(Context context) {
         if (instance == null) {
             instance = Room.databaseBuilder(context.getApplicationContext(),
-                    ElementModelDatabase.class, "elementModelDatabase")
+                    ElementModelDatabase.class, DATABASE_NAME)
                     .fallbackToDestructiveMigration()
                     .addCallback(roomCallback)
                     .build();
@@ -36,6 +38,8 @@ public abstract class ElementModelDatabase extends RoomDatabase {
         public void onCreate(@NonNull SupportSQLiteDatabase db) {
             super.onCreate(db);
             new PopulateDbAsyncTask(instance).execute();
+            // call data?
+
         }
     };
 
@@ -46,6 +50,8 @@ public abstract class ElementModelDatabase extends RoomDatabase {
             elementModelDao = database.elementModelDao();
         }
 
+
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         protected Void doInBackground(Void... voids) {
 
@@ -58,7 +64,10 @@ public abstract class ElementModelDatabase extends RoomDatabase {
                 } else {
                     tag = "" + i % 2;
                 }
-                elementModelDao.insert(new ElementModel("Ele" + i, (long)i, (long)i + i, tag, i));
+                String ts = String.valueOf(Instant.now().getNano());
+                Log.d("Timestamp test", "doInBackground: " + ts);
+                elementModelDao.insert(new ElementModel("Ele" + i, (long) i,
+                        (long) i + i, tag, i, ts));
                 i++;
             }
             return null;

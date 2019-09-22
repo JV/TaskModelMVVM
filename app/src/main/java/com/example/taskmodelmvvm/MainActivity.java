@@ -2,9 +2,14 @@ package com.example.taskmodelmvvm;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
@@ -25,13 +30,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.example.taskmodelmvvm.activities.AddEditActivity;
-import com.example.taskmodelmvvm.adapters.ElementModelRwAdapter;
-import com.example.taskmodelmvvm.entity.ElementModel;
-import com.example.taskmodelmvvm.services.ServiceIntent;
+import com.example.taskmodelmvvm.persistance.AddEditActivity;
+import com.example.taskmodelmvvm.persistance.ElementModel;
+import com.example.taskmodelmvvm.persistance.ElementModelRepository;
+import com.example.taskmodelmvvm.viewmodel.ElementModelRwAdapter;
 import com.example.taskmodelmvvm.viewmodel.ElementViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,11 +48,10 @@ public class MainActivity extends AppCompatActivity {
     public static final int EDIT_ELEMENT_REQUEST = 2;
 
     private ElementViewModel elementViewModel;
-
+    private List<ElementModel> elementModels = new ArrayList<>();
     private float screenHeight;
     private float screenWidth;
     private RecyclerView recyclerViewMain;
-    private List<ElementModel> elementModels = new ArrayList<>();
     private List<List<Integer>> coordinates = new ArrayList<>();
     private SharedPreferences sharedPreferences;
     private FloatingActionButton floatingActionButton;
@@ -55,212 +60,83 @@ public class MainActivity extends AppCompatActivity {
 
     private ElementModelRwAdapter adapter;
     private MainActivity mainActivity = this;
+    private Bitmap bitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getDisplay();
         setContentView(R.layout.activity_main);
 
+
+        // move all to fragment to not interfere with main thread
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-        initViews();
-        setupListeners();
+        // do from fragment?
         startThread();
+
+
+        elementViewModel = ViewModelProviders.of(this).get(ElementViewModel.class);
+        startLongTask(elementModels);
+        getDisplay();
+        //load / call  db / net ?
+        subscribeObservers();
+        initViews();
         setUpScreen();
+        setupListeners();
+        doStuffWithImage();
+    }
+
+    private void doStuffWithImage() {
+        bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.bitmap_to_array);
+        new AsyncTask<Void, Void, String>() {
+            @Override
+            protected String doInBackground(Void... voids) {
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+
+                byte [] bytes = outputStream.toByteArray();
+
+                String encodeImage = Base64.encodeToString(bytes, Base64.DEFAULT);
+
+                return encodeImage;
+            }
+
+            @Override
+            protected void onPostExecute(String s) {
+                Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
+            }
+        }.execute();
+    }
+
+    private void subscribeObservers() {
+
 
         if (!sharedPreferences.getBoolean("UserEdited", false)) {
-            recyclerViewMain.setLayoutManager(new LinearLayoutManager(this));
-            adapter = new ElementModelRwAdapter(screenHeight, this, coordinates, mainActivity);
-
-            recyclerViewMain.setAdapter(adapter);
-            refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-                @Override
-                public void onRefresh() {
-                    getNewerData();
-                }
-            });
-            elementViewModel = ViewModelProviders.of(this).get(ElementViewModel.class);
-
             elementViewModel.getAllElements().observe(this, new Observer<List<ElementModel>>() {
-
                 @Override
                 public void onChanged(List<ElementModel> elementModels) {
-                    Log.d("Listpassing", "onChanged: " + elementModels.toString());
-                    startLongTask(elementModels);
+
+
+                    Log.d("Unedited", "onChanged: " + elementModels.toString());
                     adapter.submitList(elementModels);
 
-
                 }
             });
-
-            new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
-
-                @Override
-                public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-
-
-                    return false;
-                }
-
-                @Override
-                public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                    elementViewModel.delete(adapter.getElementAt(viewHolder.getAdapterPosition()));
-                    sharedPreferences.edit().putBoolean("UserEdited", true).commit();
-                }
-
-            }).attachToRecyclerView(recyclerViewMain);
-
-            new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
-
-                @Override
-                public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-
-//                int fromPosition = viewHolder.getAdapterPosition();
-//                int toPosition = target.getAdapterPosition();
-//
-//                if (fromPosition < toPosition) {
-//                    for (int i = fromPosition; i < toPosition; i++) {
-//                        Collections.swap(mWordEntities, i, i + 1);
-//
-//                        int order1 = mWordEntities.get(i).getOrder();
-//                        int order2 = mWordEntities.get(i + 1).getOrder();
-//                        mWordEntities.get(i).setOrder(order2);
-//                        mWordEntities.get(i + 1).setOrder(order1);
-//                    }
-//                } else {
-//                    for (int i = fromPosition; i > toPosition; i--) {
-//                        Collections.swap(mWordEntities, i, i - 1);
-//
-//                        int order1 = mWordEntities.get(i).getOrder();
-//                        int order2 = mWordEntities.get(i - 1).getOrder();
-//                        mWordEntities.get(i).setOrder(order2);
-//                        mWordEntities.get(i - 1).setOrder(order1);
-//                    }
-//                }
-                    sharedPreferences.edit().putBoolean("UserEdited", true).commit();
-                    return true;
-                }
-
-                @Override
-                public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-
-                }
-
-            }).attachToRecyclerView(recyclerViewMain);
-
-            adapter.setOnClickListener(new ElementModelRwAdapter.OnItemClickListener() {
-                @Override
-                public void onItemClick(ElementModel elementModel) {
-                    Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
-
-                    intent.putExtra(AddEditActivity.EXTRA_ID, elementModel.getId());
-                    intent.putExtra(AddEditActivity.EXTRA_NAZIV, elementModel.getNaziv());
-                    intent.putExtra(AddEditActivity.EXTRA_POCETAK, elementModel.getPocetak());
-                    intent.putExtra(AddEditActivity.EXTRA_KRAJ, elementModel.getKraj());
-                    intent.putExtra(AddEditActivity.EXTRA_TAG, elementModel.getTag());
-                    intent.putExtra(AddEditActivity.EXTRA_CURRENT_POSITION, elementModel.getCurrentPosition());
-                    intent.putExtra(AddEditActivity.EXTRA_TOP_POSITION, (adapter.getItemCount() - 1));
-                    Log.d("EDITTOP", "onItemClick: " + adapter.getItemCount());
-                    Log.d("EDITPOS", "onItemClick: " + elementModel.getCurrentPosition());
-                    startActivityForResult(intent, EDIT_ELEMENT_REQUEST);
-                }
-            });
-
         } else {
-            recyclerViewMain.setLayoutManager(new LinearLayoutManager(this));
-            adapter = new ElementModelRwAdapter(screenHeight, this, coordinates, mainActivity);
-            recyclerViewMain.setAdapter(adapter);
-            elementViewModel = ViewModelProviders.of(this).get(ElementViewModel.class);
-
             elementViewModel.getAllElementsMoved().observe(this, new Observer<List<ElementModel>>() {
-
                 @Override
                 public void onChanged(List<ElementModel> elementModels) {
-                    Log.d("Listpassing", "onChanged: " + elementModels.toString());
-                    startLongTask(elementModels);
+
+
+                    Log.d("Edited", "onChanged: " + elementModels.toString());
                     adapter.submitList(elementModels);
-                }
-            });
-
-            new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
-
-                @Override
-                public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-                    return false;
-                }
-
-                @Override
-                public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                    elementViewModel.delete(adapter.getElementAt(viewHolder.getAdapterPosition()));
-                }
-            }).attachToRecyclerView(recyclerViewMain);
-
-            new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
-
-                @Override
-                public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-
-
-                    elementViewModel.moveElement(viewHolder.getAdapterPosition(), target.getAdapterPosition());
-//                int fromPosition = viewHolder.getAdapterPosition();
-//                int toPosition = target.getAdapterPosition();
-//
-//                if (fromPosition < toPosition) {
-//                    for (int i = fromPosition; i < toPosition; i++) {
-//                        Collections.swap(mWordEntities, i, i + 1);
-//
-//                        int order1 = mWordEntities.get(i).getOrder();
-//                        int order2 = mWordEntities.get(i + 1).getOrder();
-//                        mWordEntities.get(i).setOrder(order2);
-//                        mWordEntities.get(i + 1).setOrder(order1);
-//                    }
-//                } else {
-//                    for (int i = fromPosition; i > toPosition; i--) {
-//                        Collections.swap(mWordEntities, i, i - 1);
-//
-//                        int order1 = mWordEntities.get(i).getOrder();
-//                        int order2 = mWordEntities.get(i - 1).getOrder();
-//                        mWordEntities.get(i).setOrder(order2);
-//                        mWordEntities.get(i - 1).setOrder(order1);
-//                    }
-//                }
-
-                    return true;
-                }
-
-                @Override
-                public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-
-                }
-
-            }).attachToRecyclerView(recyclerViewMain);
-
-            adapter.setOnClickListener(new ElementModelRwAdapter.OnItemClickListener() {
-                @Override
-                public void onItemClick(ElementModel elementModel) {
-                    Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
-
-                    intent.putExtra(AddEditActivity.EXTRA_ID, elementModel.getId());
-                    intent.putExtra(AddEditActivity.EXTRA_NAZIV, elementModel.getNaziv());
-                    intent.putExtra(AddEditActivity.EXTRA_POCETAK, elementModel.getPocetak());
-                    intent.putExtra(AddEditActivity.EXTRA_KRAJ, elementModel.getKraj());
-                    intent.putExtra(AddEditActivity.EXTRA_TAG, elementModel.getTag());
-                    intent.putExtra(AddEditActivity.EXTRA_CURRENT_POSITION, elementModel.getCurrentPosition());
-                    intent.putExtra(AddEditActivity.EXTRA_TOP_POSITION, (adapter.getItemCount() - 1));
-                    Log.d("EDITTOP", "onItemClick: " + adapter.getItemCount());
-                    Log.d("EDITPOS", "onItemClick: " + elementModel.getCurrentPosition());
-                    startActivityForResult(intent, EDIT_ELEMENT_REQUEST);
                 }
             });
         }
-
-
     }
 
     private void getNewerData() {
-
-        //async
+        // load / call from net?
     }
 
     private void startThread() {
@@ -272,12 +148,56 @@ public class MainActivity extends AppCompatActivity {
     public void startLongTask(List<ElementModel> elementModels) {
         Intent serviceIntent = new Intent(this, ServiceIntent.class);
         serviceIntent.putExtra("rawData", (Serializable) elementModels);
+
+        Log.d("Main", "startLongTask: " + elementModels.toString());
         serviceIntent.putExtra("startLong", true);
         ContextCompat.startForegroundService(this, serviceIntent);
     }
 
     private void setUpScreen() {
         setSupportActionBar(toolbar);
+        recyclerViewMain.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new ElementModelRwAdapter(screenHeight, this, coordinates, mainActivity);
+        recyclerViewMain.setAdapter(adapter);
+        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                getNewerData();
+            }
+        });
+
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+
+            @Override
+            public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                return super.getMovementFlags(recyclerView, viewHolder);
+            }
+
+            @Override
+            public void onSelectedChanged(@Nullable RecyclerView.ViewHolder viewHolder, int actionState) {
+                super.onSelectedChanged(viewHolder, actionState);
+            }
+
+            @Override
+            public void onMoved(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, int fromPos, @NonNull RecyclerView.ViewHolder target, int toPos, int x, int y) {
+                super.onMoved(recyclerView, viewHolder, fromPos, target, toPos, x, y);
+            }
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+
+
+                return true;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+//                elementModels.remove(viewHolder.getAdapterPosition());
+                elementViewModel.delete(adapter.getElementAt(viewHolder.getAdapterPosition()));
+                sharedPreferences.edit().putBoolean("UserEdited", true).commit();
+            }
+
+        }).attachToRecyclerView(recyclerViewMain);
     }
 
     private void getDisplay() {
@@ -289,14 +209,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-
-
         refreshLayout = findViewById(R.id.swipeRefresh);
-
         recyclerViewMain = findViewById(R.id.recyclerviewMain);
         floatingActionButton = findViewById(R.id.floating_action_button_main);
         toolbar = findViewById(R.id.toolbar);
-
     }
 
     private void setupListeners() {
@@ -306,13 +222,36 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
 
                 intent.putExtra("topPosition", adapter.getItemCount());
-
                 Log.d("TOPADD", "onClick: " + adapter.getItemCount());
-
-
                 startActivityForResult(intent, ADD_ELEMENT_REQUEST);
-
                 floatingActionButton.hide();
+            }
+        });
+
+        adapter.setOnClickListener(new ElementModelRwAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(ElementModel elementModel) {
+                Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
+
+
+                //replace with less code with parcelable
+                intent.putExtra(AddEditActivity.EXTRA_ID, elementModel.getId());
+                intent.putExtra(AddEditActivity.EXTRA_NAZIV, elementModel.getNaziv());
+                intent.putExtra(AddEditActivity.EXTRA_POCETAK, elementModel.getPocetak());
+                intent.putExtra(AddEditActivity.EXTRA_KRAJ, elementModel.getKraj());
+                intent.putExtra(AddEditActivity.EXTRA_TAG, elementModel.getTag());
+                intent.putExtra(AddEditActivity.EXTRA_CURRENT_POSITION, elementModel.getCurrentPosition());
+                intent.putExtra(AddEditActivity.EXTRA_TOP_POSITION, (adapter.getItemCount() - 1));
+                Log.d("EDITTOP", "onItemClick: " + adapter.getItemCount());
+                Log.d("EDITPOS", "onItemClick: " + elementModel.getCurrentPosition());
+                startActivityForResult(intent, EDIT_ELEMENT_REQUEST);
+            }
+        });
+
+        adapter.setOnLongTaskDoneListener(new ElementModelRwAdapter.OnLongTaskDoneListener() {
+            @Override
+            public void onLongTaskDoneListener(ElementModelRwAdapter elementModelRwAdapter) {
+               Toast.makeText(getApplicationContext(), "Hello", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -328,9 +267,8 @@ public class MainActivity extends AppCompatActivity {
             String tag = data.getStringExtra(AddEditActivity.EXTRA_TAG);
             int position = data.getIntExtra("topPosition", -1);
 
-
             Log.d("Addedtolist", "onActivityResult: " + position);
-            ElementModel elementModel = new ElementModel(naziv, pocetak, kraj, tag, position + 1);
+            ElementModel elementModel = new ElementModel(naziv, pocetak, kraj, tag, position + 1, "0");
             elementViewModel.insert(elementModel);
             Toast.makeText(this, "Element added", Toast.LENGTH_SHORT).show();
 
@@ -348,13 +286,13 @@ public class MainActivity extends AppCompatActivity {
             int currentPosition = data.getIntExtra(AddEditActivity.EXTRA_CURRENT_POSITION, -1);
 
             Log.d("Editedposition", "onActivityResult: " + currentPosition);
-            ElementModel elementModel = new ElementModel(naziv, pocetak, kraj, tag, currentPosition);
+            ElementModel elementModel = new ElementModel(naziv, pocetak, kraj, tag, currentPosition, "0");
             elementModel.setId(id);
             elementViewModel.update(elementModel);
             Toast.makeText(this, "Element updated", Toast.LENGTH_SHORT).show();
 
         } else {
-            Toast.makeText(this, "No changes added", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "No changes detected", Toast.LENGTH_SHORT).show();
         }
         floatingActionButton.show();
     }
@@ -370,7 +308,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         stopThread();
-        Log.d("mainonDestroy", "onDestroy: Main destrtroyed");
     }
 
     private void stopThread() {
@@ -406,5 +343,4 @@ public class MainActivity extends AppCompatActivity {
                 return super.onOptionsItemSelected(item);
         }
     }
-
 }

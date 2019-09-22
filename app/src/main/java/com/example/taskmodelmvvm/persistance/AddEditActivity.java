@@ -1,4 +1,4 @@
-package com.example.taskmodelmvvm.activities;
+package com.example.taskmodelmvvm.persistance;
 
 import android.content.Intent;
 import android.os.Build;
@@ -35,6 +35,8 @@ public class AddEditActivity extends AppCompatActivity {
             "com.example.taskmodelmvvm.activities.EXTRA_CURRENT_POSITION";
     public static final String EXTRA_TOP_POSITION =
             "com.example.taskmodelmvvm.activities.EXTRA_TOP_POSITION";
+
+    // add timestamp
 
     EditText etNaziv;
     EditText etPocetak;

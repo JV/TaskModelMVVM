@@ -1,31 +1,52 @@
-package com.example.taskmodelmvvm.repository;
+package com.example.taskmodelmvvm.persistance;
 
 import android.app.Application;
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Build;
 
 import androidx.annotation.RequiresApi;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
-import com.example.taskmodelmvvm.dao.ElementModelDao;
-import com.example.taskmodelmvvm.database.ElementModelDatabase;
-import com.example.taskmodelmvvm.entity.ElementModel;
-
+import java.util.ArrayList;
 import java.util.List;
+
 
 public class ElementModelRepository {
 
-    private ElementModelDao elementModelDao;
+    private static ElementModelRepository instance;
+    private MutableLiveData<List<ElementModel>> mutableLiveData;
     private LiveData<List<ElementModel>> allElements;
-
     private LiveData<List<ElementModel>> allElementsMoved;
+    private ElementModelDao elementModelDao;
+    private List<ElementModel> elementModels;
 
+    public ElementModelRepository(Context context) {
 
-    public ElementModelRepository(Application application) {
-        ElementModelDatabase database = ElementModelDatabase.getInstance(application);
-        elementModelDao = database.elementModelDao();
+        ElementModelDatabase elementModelDatabase = ElementModelDatabase.getInstance(context);
+        elementModelDao = elementModelDatabase.elementModelDao();
         allElements = elementModelDao.getAllElements();
         allElementsMoved = elementModelDao.getAllElementsMoved();
+        elementModels = elementModelDao.getAllElementsList();
+        mutableLiveData = new MutableLiveData<>();
+
+    }
+
+
+    public static ElementModelRepository getInstance(Context context) {
+        if (instance == null) {
+            instance = new ElementModelRepository(context);
+        }
+        return instance;
+    }
+
+    public LiveData<List<ElementModel>> getMutableElements() {
+        return mutableLiveData;
+    }
+
+    public List<ElementModel> getAllElementsList() {
+        return elementModels;
     }
 
     public void insert(ElementModel elementModel) {
@@ -72,7 +93,6 @@ public class ElementModelRepository {
             int to = params[1];
 
             if (from > to) {
-
 
 
             }

@@ -1,4 +1,4 @@
-package com.example.taskmodelmvvm.services;
+package com.example.taskmodelmvvm;
 
 import android.app.IntentService;
 import android.app.Notification;
@@ -8,8 +8,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -17,10 +19,10 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
-import com.example.taskmodelmvvm.entity.ElementModel;
-import com.example.taskmodelmvvm.threads.UiHandlerThread;
+import com.example.taskmodelmvvm.persistance.ElementModel;
 import com.google.gson.Gson;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -87,12 +89,15 @@ public class ServiceIntent extends IntentService {
             sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
             elementModels = (List<ElementModel>) intent.getSerializableExtra("rawData");
 
+            Log.d(TAG, "onHandleIntent: " + elementModels.toString());
+
             Handler handler = new Handler();
             handler.post(new Runnable() {
                 @Override
                 public void run() {
 
-                    performLongTask();
+                    performLongTask(elementModels);
+
                     Log.d(TAG, "handleMessage:  long task done if this under coords");
                 }
             });
@@ -161,7 +166,7 @@ public class ServiceIntent extends IntentService {
         Log.d(TAG, "onDestroy: RUN");
     }
 
-    private void performLongTask() {
+    private void performLongTask(List<ElementModel> elementModels) {
 
         saveDifferentTags();
         prepareElementData();
