@@ -1,4 +1,4 @@
-package com.example.taskmodelmvvm;
+package com.example.taskmodelmvvm.tasks;
 
 import android.app.IntentService;
 import android.app.Notification;
@@ -8,10 +8,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Parcelable;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -22,7 +20,6 @@ import androidx.core.app.NotificationCompat;
 import com.example.taskmodelmvvm.persistance.ElementModel;
 import com.google.gson.Gson;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -87,7 +84,7 @@ public class ServiceIntent extends IntentService {
 
             Log.d(TAG, "onHandleIntent: got instruction to do long task");
             sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-            elementModels = (List<ElementModel>) intent.getSerializableExtra("rawData");
+            elementModels = intent.getParcelableArrayListExtra("rawData");
 
             Log.d(TAG, "onHandleIntent: " + elementModels.toString());
 

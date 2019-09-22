@@ -1,4 +1,4 @@
-package com.example.taskmodelmvvm;
+package com.example.taskmodelmvvm.tasks;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -49,12 +49,9 @@ public class UiHandlerThread extends HandlerThread {
     @Override
     protected void onLooperPrepared() {
 
-
-
         handler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-
 
                 sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
                 elementModels = msg.getData().getParcelable("rawData");

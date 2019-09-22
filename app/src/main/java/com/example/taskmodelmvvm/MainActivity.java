@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Log;
@@ -31,16 +32,18 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.taskmodelmvvm.persistance.AddEditActivity;
 import com.example.taskmodelmvvm.persistance.ElementModel;
+import com.example.taskmodelmvvm.tasks.ServiceIntent;
 import com.example.taskmodelmvvm.viewmodel.ElementModelRwAdapter;
 import com.example.taskmodelmvvm.viewmodel.ElementViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.ByteArrayOutputStream;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+    // move all to MainFragment
 
     public static final int ADD_ELEMENT_REQUEST = 1;
     public static final int EDIT_ELEMENT_REQUEST = 2;
@@ -59,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
     private ElementModelRwAdapter adapter;
     private MainActivity mainActivity = this;
     private Bitmap bitmap;
+    private boolean mOrderChanged;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,10 +70,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
-        // move all to fragment to not interfere with main thread
+        //show UI on main - start fragment
+
+        // start thread from fragment
+        // itereate data in thread started from fragment?
+        //
+        // listen to long task, update view
+
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-        // do from fragment?
+        // do from fragment listen to custom handler finished
         startThread();
 
 
@@ -81,10 +91,16 @@ public class MainActivity extends AppCompatActivity {
         initViews();
         setUpScreen();
         setupListeners();
+
+        // recode to class with static async task?
         doStuffWithImage();
     }
 
+
+    // move all to fragment
+
     private void doStuffWithImage() {
+
         bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bitmap_to_array);
         new AsyncTask<Void, Void, String>() {
             @Override
@@ -114,7 +130,6 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onChanged(List<ElementModel> elementModels) {
 
-
                     Log.d("Unedited", "onChanged: " + elementModels.toString());
                     adapter.submitList(elementModels);
 
@@ -124,7 +139,6 @@ public class MainActivity extends AppCompatActivity {
             elementViewModel.getAllElementsMoved().observe(this, new Observer<List<ElementModel>>() {
                 @Override
                 public void onChanged(List<ElementModel> elementModels) {
-
 
                     Log.d("Edited", "onChanged: " + elementModels.toString());
                     adapter.submitList(elementModels);
@@ -140,15 +154,20 @@ public class MainActivity extends AppCompatActivity {
     private void startThread() {
         Intent serviceIntent = new Intent(this, ServiceIntent.class);
         serviceIntent.putExtra("startThread", true);
+
+
+        //add filter for build
         ContextCompat.startForegroundService(this, serviceIntent);
     }
 
     public void startLongTask(List<ElementModel> elementModels) {
         Intent serviceIntent = new Intent(this, ServiceIntent.class);
-        serviceIntent.putExtra("rawData", (Serializable) elementModels);
+        serviceIntent.putParcelableArrayListExtra("rawData", (ArrayList<? extends Parcelable>) elementModels);
 
         Log.d("Main", "startLongTask: " + elementModels.toString());
         serviceIntent.putExtra("startLong", true);
+
+        // add filter for build
         ContextCompat.startForegroundService(this, serviceIntent);
     }
 
@@ -168,34 +187,49 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-                return super.getMovementFlags(recyclerView, viewHolder);
+                int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
+                int swipeFlags = ItemTouchHelper.START | ItemTouchHelper.END;
+                return makeMovementFlags(dragFlags, swipeFlags);
             }
 
             @Override
             public void onSelectedChanged(@Nullable RecyclerView.ViewHolder viewHolder, int actionState) {
                 super.onSelectedChanged(viewHolder, actionState);
+                sharedPreferences.edit().putBoolean("UserEdited", true).commit();
+                if (actionState == ItemTouchHelper.ACTION_STATE_IDLE && mOrderChanged) {
+
+                    mOrderChanged = false;
+                }
             }
 
             @Override
             public void onMoved(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, int fromPos, @NonNull RecyclerView.ViewHolder target, int toPos, int x, int y) {
                 super.onMoved(recyclerView, viewHolder, fromPos, target, toPos, x, y);
+
             }
 
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
 
-
-                return true;
+                mOrderChanged = true;
+                return false;
             }
 
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-//                elementModels.remove(viewHolder.getAdapterPosition());
+
                 elementViewModel.delete(adapter.getElementAt(viewHolder.getAdapterPosition()));
                 sharedPreferences.edit().putBoolean("UserEdited", true).commit();
             }
 
         }).attachToRecyclerView(recyclerViewMain);
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList("rawData", (ArrayList<? extends Parcelable>) elementModels);
+        Log.d("OUTSTATE", "onSaveInstanceState: " + elementModels.toString());
     }
 
     private void getDisplay() {
@@ -218,7 +252,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
-
                 intent.putExtra("topPosition", adapter.getItemCount());
                 Log.d("TOPADD", "onClick: " + adapter.getItemCount());
                 startActivityForResult(intent, ADD_ELEMENT_REQUEST);
@@ -232,7 +265,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
 
 
-                //replace with less code with parcelable
+                //replace with less code with parcelable?
                 intent.putExtra(AddEditActivity.EXTRA_ID, elementModel.getId());
                 intent.putExtra(AddEditActivity.EXTRA_NAZIV, elementModel.getNaziv());
                 intent.putExtra(AddEditActivity.EXTRA_POCETAK, elementModel.getPocetak());
@@ -254,6 +287,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+
+    //missing timestamp update
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -297,7 +332,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (getSupportFragmentManager().getBackStackEntryCount() > 0)
+        if (getSupportFragmentManager().getBackStackEntryCount() > 1)
             getSupportFragmentManager().popBackStackImmediate();
         else super.onBackPressed();
     }
@@ -305,7 +340,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        stopThread();
+        stopThread(); //?
     }
 
     private void stopThread() {
@@ -322,6 +357,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //add stuff
+
     }
 
     @Override
