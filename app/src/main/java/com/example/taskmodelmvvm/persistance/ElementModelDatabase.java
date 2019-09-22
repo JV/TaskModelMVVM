@@ -26,6 +26,7 @@ public abstract class ElementModelDatabase extends RoomDatabase {
         if (instance == null) {
             instance = Room.databaseBuilder(context.getApplicationContext(),
                     ElementModelDatabase.class, DATABASE_NAME)
+                    .allowMainThreadQueries()
                     .fallbackToDestructiveMigration()
                     .addCallback(roomCallback)
                     .build();

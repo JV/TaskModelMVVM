@@ -7,7 +7,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Log;
@@ -32,7 +31,6 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.taskmodelmvvm.persistance.AddEditActivity;
 import com.example.taskmodelmvvm.persistance.ElementModel;
-import com.example.taskmodelmvvm.persistance.ElementModelRepository;
 import com.example.taskmodelmvvm.viewmodel.ElementModelRwAdapter;
 import com.example.taskmodelmvvm.viewmodel.ElementViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -76,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         elementViewModel = ViewModelProviders.of(this).get(ElementViewModel.class);
-        startLongTask(elementModels);
+        startLongTask(elementViewModel.getAllElementsList());
         getDisplay();
         //load / call  db / net ?
         subscribeObservers();
@@ -87,14 +85,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void doStuffWithImage() {
-        bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.bitmap_to_array);
+        bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bitmap_to_array);
         new AsyncTask<Void, Void, String>() {
             @Override
             protected String doInBackground(Void... voids) {
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
 
-                byte [] bytes = outputStream.toByteArray();
+                byte[] bytes = outputStream.toByteArray();
 
                 String encodeImage = Base64.encodeToString(bytes, Base64.DEFAULT);
 
@@ -251,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
         adapter.setOnLongTaskDoneListener(new ElementModelRwAdapter.OnLongTaskDoneListener() {
             @Override
             public void onLongTaskDoneListener(ElementModelRwAdapter elementModelRwAdapter) {
-               Toast.makeText(getApplicationContext(), "Hello", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "Hello", Toast.LENGTH_SHORT).show();
             }
         });
     }
