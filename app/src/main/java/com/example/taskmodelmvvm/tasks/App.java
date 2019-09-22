@@ -1,4 +1,4 @@
-package com.example.taskmodelmvvm.viewmodel;
+package com.example.taskmodelmvvm.tasks;
 
 import android.app.Application;
 import android.app.NotificationChannel;

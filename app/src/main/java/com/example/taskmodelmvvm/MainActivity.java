@@ -130,6 +130,8 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onChanged(List<ElementModel> elementModels) {
 
+                    startLongTask(elementModels);
+
                     Log.d("Unedited", "onChanged: " + elementModels.toString());
                     adapter.submitList(elementModels);
 
@@ -140,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onChanged(List<ElementModel> elementModels) {
 
+                    startLongTask(elementModels);
                     Log.d("Edited", "onChanged: " + elementModels.toString());
                     adapter.submitList(elementModels);
                 }
@@ -211,6 +214,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
 
+               // move elementViewModel.update();
                 mOrderChanged = true;
                 return false;
             }
@@ -282,7 +286,7 @@ public class MainActivity extends AppCompatActivity {
         adapter.setOnLongTaskDoneListener(new ElementModelRwAdapter.OnLongTaskDoneListener() {
             @Override
             public void onLongTaskDoneListener(ElementModelRwAdapter elementModelRwAdapter) {
-                Toast.makeText(getApplicationContext(), "Hello", Toast.LENGTH_SHORT).show();
+                adapter.notifyDataSetChanged(); // draw lines
             }
         });
     }

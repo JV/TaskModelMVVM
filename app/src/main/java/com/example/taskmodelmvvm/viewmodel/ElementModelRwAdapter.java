@@ -47,6 +47,8 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
     private ElementViewModel elementViewModel;
     private MainActivity mainActivity;
     private List<ElementModel> elementModels = new ArrayList<>();
+    private int lineWidth = 10; // takes padding/margin into account
+    private int maxNumberOfLines = (int) ((screenWidth / 2) / lineWidth);
 
 
     public ElementModelRwAdapter(float screenHeight, Context context,
