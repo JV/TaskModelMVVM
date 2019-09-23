@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Point;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
@@ -29,7 +28,9 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.taskmodelmvvm.persistance.AddEditActivity;
 import com.example.taskmodelmvvm.persistance.ElementModel;
+import com.example.taskmodelmvvm.tasks.OnLongTaskCompleted;
 import com.example.taskmodelmvvm.tasks.ServiceIntent;
+import com.example.taskmodelmvvm.tasks.WorkTask;
 import com.example.taskmodelmvvm.viewmodel.ElementModelRwAdapter;
 import com.example.taskmodelmvvm.viewmodel.ElementViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -45,9 +46,6 @@ public class MainFragment extends Fragment {
     private static final int ADD_ELEMENT_REQUEST = 1;
     private static final int EDIT_ELEMENT_REQUEST = 2;
 
-    OnWorkCompletedListener workCallback;
-
-    private ElementModelRwAdapter.OnLongTaskCompleted listener;
     private List<ElementModel> elementModels = new ArrayList<>();
     private List<Fragment> fragments = new ArrayList<>();
     private float screenHeight;
@@ -84,20 +82,15 @@ public class MainFragment extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        startThread();
+//        startThread();
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
         elementViewModel = ViewModelProviders.of(this).get(ElementViewModel.class);
+
         subscribeObservers();
-        getDisplay();
         setUpScreen();
+        getDisplay();
         setupListeners();
 
-    }
-
-
-
-    public interface OnWorkCompletedListener {
-        void onWorkCompleted(boolean resultCode);
     }
 
     private void subscribeObservers() {
@@ -107,19 +100,10 @@ public class MainFragment extends Fragment {
                 @Override
                 public void onChanged(List<ElementModel> elementModels) {
 
-                    startLongTask(elementModels);
-
-                    new WorkTask().execute();
-
+                    new WorkTask(getActivity().getApplicationContext(),elementModels, adapter).execute();
                     Log.d("Unedited", "onChanged: " + elementModels.toString());
 
-                    recyclerViewMain.setAdapter(null);
-                    recyclerViewMain.setLayoutManager(null);
-
-                    recyclerViewMain.setLayoutManager(new LinearLayoutManager(getActivity().getApplicationContext()));
-                    recyclerViewMain.setAdapter(adapter);
                     adapter.submitList(elementModels);
-                    adapter.notifyDataSetChanged();
 
                 }
             });
@@ -128,18 +112,9 @@ public class MainFragment extends Fragment {
                 @Override
                 public void onChanged(List<ElementModel> elementModels) {
 
-                    startLongTask(elementModels);
-
-                    new WorkTask().execute();
+                    new WorkTask(getActivity().getApplicationContext(), elementModels, adapter).execute();
                     Log.d("Edited", "onChanged: " + elementModels.toString());
-
-                    recyclerViewMain.setAdapter(null);
-                    recyclerViewMain.setLayoutManager(null);
-
-                    recyclerViewMain.setLayoutManager(new LinearLayoutManager(getActivity().getApplicationContext()));
-                    recyclerViewMain.setAdapter(adapter);
                     adapter.submitList(elementModels);
-                    adapter.notifyDataSetChanged();
                 }
             });
         }
@@ -167,7 +142,7 @@ public class MainFragment extends Fragment {
     private void setUpScreen() {
 
         recyclerViewMain.setLayoutManager(new LinearLayoutManager(getActivity().getApplicationContext()));
-        adapter = new ElementModelRwAdapter(screenHeight, getActivity().getApplicationContext(), coordinates, listener);
+        adapter = new ElementModelRwAdapter(screenHeight, getActivity().getApplicationContext(), coordinates);
         recyclerViewMain.setAdapter(adapter);
 //        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
 //            @Override
@@ -221,7 +196,7 @@ public class MainFragment extends Fragment {
 
         }).attachToRecyclerView(recyclerViewMain);
 
-        //add adapter listener to changes
+
     }
 
     private void getDisplay() {
@@ -270,11 +245,11 @@ public class MainFragment extends Fragment {
             }
         });
 
-        adapter.setOnLongTaskCompletedListener(new ElementModelRwAdapter.OnLongTaskCompleted() {
+        adapter.setOnLongTaskCompletedListener(new OnLongTaskCompleted() {
             @Override
             public void onLongTaskCompleted() {
-                adapter.notifyDataSetChanged();
-                Log.d("DRAWINGLINES", "onLongTaskCompleted: drawing lines");
+
+                Log.d("TASKRECEIVEDBACK", "onLongTaskCompleted: RECEIVED");
             }
         });
     }
@@ -319,23 +294,5 @@ public class MainFragment extends Fragment {
             Toast.makeText(getContext(), "No changes detected", Toast.LENGTH_SHORT).show();
         }
         floatingActionButton.show();
-    }
-
-    static class WorkTask extends AsyncTask<Object, Object, Object> {
-
-        private List<ElementModel> elementModels;
-
-        @Override
-        protected Void doInBackground(Object... objects) {
-
-            Log.d("WorkTask", "doInBackground: WORKING");
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Object o) {
-            Log.d("WorkTask", "doInBackground: DONE");
-
-        }
     }
 }

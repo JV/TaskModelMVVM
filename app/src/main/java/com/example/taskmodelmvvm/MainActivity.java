@@ -42,15 +42,16 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements MainFragment.OnWorkCompletedListener {
+public class MainActivity extends AppCompatActivity{
 
-    // move all to MainFragment
+
 
     public static final int ADD_ELEMENT_REQUEST = 1;
     public static final int EDIT_ELEMENT_REQUEST = 2;
 
     private ElementViewModel elementViewModel;
     private List<ElementModel> elementModels = new ArrayList<>();
+    private Bitmap bitmap;
     private float screenHeight;
     private float screenWidth;
     private RecyclerView recyclerViewMain;
@@ -62,52 +63,20 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnWo
 
     private ElementModelRwAdapter adapter;
     private MainActivity mainActivity = this;
-    private Bitmap bitmap;
+
     private boolean mOrderChanged;
     private List<Fragment> fragments = new ArrayList<>();
     private FragmentManager fragmentManager;
 
-    private ElementModelRwAdapter.OnLongTaskCompleted longTaskCompleted;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        initViews();
-
-        //load prefs for whatever reason?
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         this.getSupportFragmentManager().beginTransaction().add(R.id.activityMain, new MainFragment()).addToBackStack("fragmentMain").commit();
 
-        //
-        // listen to long task, update view
-
-
-        // do from fragment listen to custom handler finished
-//        startThread();
-
-//
-//        elementViewModel = ViewModelProviders.of(this).get(ElementViewModel.class);
-//        elementViewModel.getAllElements().observe(this, new Observer<List<ElementModel>>() {
-//            @Override
-//            public void onChanged(List<ElementModel> elementModels) {
-//                startLongTask(elementModels);
-//            }
-//        });
-//        getDisplay();
-//        //load / call  db / net ?
-//        subscribeObservers();
-
-//        setUpScreen();
-//        setupListeners();
-//
-//        // recode to class with static async task?
-//        doStuffWithImage();
     }
-
-
-    // move all to fragment
 
     private void doStuffWithImage() {
 
@@ -132,210 +101,11 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnWo
         }.execute();
     }
 
-    private void subscribeObservers() {
-
-
-        if (!sharedPreferences.getBoolean("UserEdited", false)) {
-            elementViewModel.getAllElements().observe(this, new Observer<List<ElementModel>>() {
-                @Override
-                public void onChanged(List<ElementModel> elementModels) {
-
-                    startLongTask(elementModels);
-
-                    Log.d("Unedited", "onChanged: " + elementModels.toString());
-                    adapter.submitList(elementModels);
-
-                }
-            });
-        } else {
-            elementViewModel.getAllElementsMoved().observe(this, new Observer<List<ElementModel>>() {
-                @Override
-                public void onChanged(List<ElementModel> elementModels) {
-
-                    startLongTask(elementModels);
-                    Log.d("Edited", "onChanged: " + elementModels.toString());
-                    adapter.submitList(elementModels);
-                }
-            });
-        }
-    }
-
-    private void getNewerData() {
-        // load / call from net?
-    }
-
-    private void startThread() {
-        Intent serviceIntent = new Intent(this, ServiceIntent.class);
-        serviceIntent.putExtra("startThread", true);
-
-
-        //add filter for build
-        ContextCompat.startForegroundService(this, serviceIntent);
-    }
-
-    public void startLongTask(List<ElementModel> elementModels) {
-        Intent serviceIntent = new Intent(this, ServiceIntent.class);
-        serviceIntent.putParcelableArrayListExtra("rawData", (ArrayList<? extends Parcelable>) elementModels);
-
-        Log.d("Main", "startLongTask: " + elementModels.toString());
-        serviceIntent.putExtra("startLong", true);
-
-        // add filter for build
-        ContextCompat.startForegroundService(this, serviceIntent);
-    }
-
-    private void setUpScreen() {
-        setSupportActionBar(toolbar);
-        recyclerViewMain.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new ElementModelRwAdapter(screenHeight, this, coordinates, longTaskCompleted);
-        recyclerViewMain.setAdapter(adapter);
-//        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-//            @Override
-//            public void onRefresh() {
-//                getNewerData();
-//            }
-//        });
-
-        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
-
-            @Override
-            public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-                int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
-                int swipeFlags = ItemTouchHelper.START | ItemTouchHelper.END;
-                return makeMovementFlags(dragFlags, swipeFlags);
-            }
-
-            @Override
-            public void onSelectedChanged(@Nullable RecyclerView.ViewHolder viewHolder, int actionState) {
-                super.onSelectedChanged(viewHolder, actionState);
-                sharedPreferences.edit().putBoolean("UserEdited", true).commit();
-                if (actionState == ItemTouchHelper.ACTION_STATE_IDLE && mOrderChanged) {
-
-                    mOrderChanged = false;
-                }
-            }
-
-            @Override
-            public void onMoved(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, int fromPos, @NonNull RecyclerView.ViewHolder target, int toPos, int x, int y) {
-                super.onMoved(recyclerView, viewHolder, fromPos, target, toPos, x, y);
-
-            }
-
-            @Override
-            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-
-                // move elementViewModel.update();
-                mOrderChanged = true;
-                return false;
-            }
-
-            @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-
-                elementViewModel.delete(adapter.getElementAt(viewHolder.getAdapterPosition()));
-                sharedPreferences.edit().putBoolean("UserEdited", true).commit();
-            }
-
-        }).attachToRecyclerView(recyclerViewMain);
-    }
-
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList("rawData", (ArrayList<? extends Parcelable>) elementModels);
         Log.d("OUTSTATE", "onSaveInstanceState: " + elementModels.toString());
-    }
-
-    private void getDisplay() {
-        Display display = getWindowManager().getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-        screenWidth = size.x;
-        screenHeight = size.y;
-    }
-
-    private void initViews() {
-//        refreshLayout = findViewById(R.id.swipeRefresh);
-        recyclerViewMain = findViewById(R.id.recyclerviewMain);
-        floatingActionButton = findViewById(R.id.floating_action_button_main);
-        toolbar = findViewById(R.id.toolbar);
-    }
-
-    private void setupListeners() {
-        floatingActionButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
-                intent.putExtra("topPosition", adapter.getItemCount());
-                Log.d("TOPADD", "onClick: " + adapter.getItemCount());
-                startActivityForResult(intent, ADD_ELEMENT_REQUEST);
-                floatingActionButton.hide();
-            }
-        });
-
-        adapter.setOnClickListener(new ElementModelRwAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(ElementModel elementModel) {
-                Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
-
-
-                //replace with less code with parcelable?
-                intent.putExtra(AddEditActivity.EXTRA_ID, elementModel.getId());
-                intent.putExtra(AddEditActivity.EXTRA_NAZIV, elementModel.getNaziv());
-                intent.putExtra(AddEditActivity.EXTRA_POCETAK, elementModel.getPocetak());
-                intent.putExtra(AddEditActivity.EXTRA_KRAJ, elementModel.getKraj());
-                intent.putExtra(AddEditActivity.EXTRA_TAG, elementModel.getTag());
-                intent.putExtra(AddEditActivity.EXTRA_CURRENT_POSITION, elementModel.getCurrentPosition());
-                intent.putExtra(AddEditActivity.EXTRA_TOP_POSITION, (adapter.getItemCount() - 1));
-                Log.d("EDITTOP", "onItemClick: " + adapter.getItemCount());
-                Log.d("EDITPOS", "onItemClick: " + elementModel.getCurrentPosition());
-                startActivityForResult(intent, EDIT_ELEMENT_REQUEST);
-            }
-        });
-
-    }
-
-
-    //missing timestamp update
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == ADD_ELEMENT_REQUEST && resultCode == RESULT_OK) {
-            String naziv = data.getStringExtra(AddEditActivity.EXTRA_NAZIV);
-            long pocetak = data.getLongExtra(AddEditActivity.EXTRA_POCETAK, 0);
-            long kraj = data.getLongExtra(AddEditActivity.EXTRA_KRAJ, 0);
-            String tag = data.getStringExtra(AddEditActivity.EXTRA_TAG);
-            int position = data.getIntExtra("topPosition", -1);
-
-            Log.d("Addedtolist", "onActivityResult: " + position);
-            ElementModel elementModel = new ElementModel(naziv, pocetak, kraj, tag, position + 1, "0");
-            elementViewModel.insert(elementModel);
-            Toast.makeText(this, "Element added", Toast.LENGTH_SHORT).show();
-
-        } else if (requestCode == EDIT_ELEMENT_REQUEST && resultCode == RESULT_OK) {
-
-            int id = data.getIntExtra(AddEditActivity.EXTRA_ID, -1);
-            if (id == -1) {
-                Toast.makeText(this, "Element not updated", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            String naziv = data.getStringExtra(AddEditActivity.EXTRA_NAZIV);
-            long pocetak = data.getLongExtra(AddEditActivity.EXTRA_POCETAK, 0);
-            long kraj = data.getLongExtra(AddEditActivity.EXTRA_KRAJ, 0);
-            String tag = data.getStringExtra(AddEditActivity.EXTRA_TAG);
-            int currentPosition = data.getIntExtra(AddEditActivity.EXTRA_CURRENT_POSITION, -1);
-
-            Log.d("Editedposition", "onActivityResult: " + currentPosition);
-            ElementModel elementModel = new ElementModel(naziv, pocetak, kraj, tag, currentPosition, "0");
-            elementModel.setId(id);
-            elementViewModel.update(elementModel);
-            Toast.makeText(this, "Element updated", Toast.LENGTH_SHORT).show();
-
-        } else {
-            Toast.makeText(this, "No changes detected", Toast.LENGTH_SHORT).show();
-        }
-        floatingActionButton.show();
     }
 
     @Override
@@ -392,8 +162,206 @@ public class MainActivity extends AppCompatActivity implements MainFragment.OnWo
         }
     }
 
-    @Override
-    public void onWorkCompleted(boolean resultCode) {
-        Log.d("MAINACTIV", "onLongTaskCompleted: ");
-    }
+//    private void subscribeObservers() {
+//
+//
+//        if (!sharedPreferences.getBoolean("UserEdited", false)) {
+//            elementViewModel.getAllElements().observe(this, new Observer<List<ElementModel>>() {
+//                @Override
+//                public void onChanged(List<ElementModel> elementModels) {
+//
+//                    startLongTask(elementModels);
+//
+//                    Log.d("Unedited", "onChanged: " + elementModels.toString());
+//                    adapter.submitList(elementModels);
+//
+//                }
+//            });
+//        } else {
+//            elementViewModel.getAllElementsMoved().observe(this, new Observer<List<ElementModel>>() {
+//                @Override
+//                public void onChanged(List<ElementModel> elementModels) {
+//
+//                    startLongTask(elementModels);
+//                    Log.d("Edited", "onChanged: " + elementModels.toString());
+//                    adapter.submitList(elementModels);
+//                }
+//            });
+//        }
+//    }
+//
+//    private void getNewerData() {
+//        // load / call from net?
+//    }
+//
+//    private void startThread() {
+//        Intent serviceIntent = new Intent(this, ServiceIntent.class);
+//        serviceIntent.putExtra("startThread", true);
+//
+//
+//        //add filter for build
+//        ContextCompat.startForegroundService(this, serviceIntent);
+//    }
+//
+//    public void startLongTask(List<ElementModel> elementModels) {
+//        Intent serviceIntent = new Intent(this, ServiceIntent.class);
+//        serviceIntent.putParcelableArrayListExtra("rawData", (ArrayList<? extends Parcelable>) elementModels);
+//
+//        Log.d("Main", "startLongTask: " + elementModels.toString());
+//        serviceIntent.putExtra("startLong", true);
+//
+//        // add filter for build
+//        ContextCompat.startForegroundService(this, serviceIntent);
+//    }
+//
+//    private void setUpScreen() {
+//        setSupportActionBar(toolbar);
+//        recyclerViewMain.setLayoutManager(new LinearLayoutManager(this));
+//        adapter = new ElementModelRwAdapter(screenHeight, this, coordinates, longTaskCompleted);
+//        recyclerViewMain.setAdapter(adapter);
+////        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+////            @Override
+////            public void onRefresh() {
+////                getNewerData();
+////            }
+////        });
+//
+//        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+//
+//            @Override
+//            public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+//                int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
+//                int swipeFlags = ItemTouchHelper.START | ItemTouchHelper.END;
+//                return makeMovementFlags(dragFlags, swipeFlags);
+//            }
+//
+//            @Override
+//            public void onSelectedChanged(@Nullable RecyclerView.ViewHolder viewHolder, int actionState) {
+//                super.onSelectedChanged(viewHolder, actionState);
+//                sharedPreferences.edit().putBoolean("UserEdited", true).commit();
+//                if (actionState == ItemTouchHelper.ACTION_STATE_IDLE && mOrderChanged) {
+//
+//                    mOrderChanged = false;
+//                }
+//            }
+//
+//            @Override
+//            public void onMoved(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, int fromPos, @NonNull RecyclerView.ViewHolder target, int toPos, int x, int y) {
+//                super.onMoved(recyclerView, viewHolder, fromPos, target, toPos, x, y);
+//
+//            }
+//
+//            @Override
+//            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+//
+//                // move elementViewModel.update();
+//                mOrderChanged = true;
+//                return false;
+//            }
+//
+//            @Override
+//            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+//
+//                elementViewModel.delete(adapter.getElementAt(viewHolder.getAdapterPosition()));
+//                sharedPreferences.edit().putBoolean("UserEdited", true).commit();
+//            }
+//
+//        }).attachToRecyclerView(recyclerViewMain);
+//    }
+
+
+
+//    private void getDisplay() {
+//        Display display = getWindowManager().getDefaultDisplay();
+//        Point size = new Point();
+//        display.getSize(size);
+//        screenWidth = size.x;
+//        screenHeight = size.y;
+//    }
+//
+//    private void initViews() {
+////        refreshLayout = findViewById(R.id.swipeRefresh);
+//        recyclerViewMain = findViewById(R.id.recyclerviewMain);
+//        floatingActionButton = findViewById(R.id.floating_action_button_main);
+//        toolbar = findViewById(R.id.toolbar);
+//    }
+//
+//    private void setupListeners() {
+//        floatingActionButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
+//                intent.putExtra("topPosition", adapter.getItemCount());
+//                Log.d("TOPADD", "onClick: " + adapter.getItemCount());
+//                startActivityForResult(intent, ADD_ELEMENT_REQUEST);
+//                floatingActionButton.hide();
+//            }
+//        });
+//
+//        adapter.setOnClickListener(new ElementModelRwAdapter.OnItemClickListener() {
+//            @Override
+//            public void onItemClick(ElementModel elementModel) {
+//                Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
+//
+//
+//                //replace with less code with parcelable?
+//                intent.putExtra(AddEditActivity.EXTRA_ID, elementModel.getId());
+//                intent.putExtra(AddEditActivity.EXTRA_NAZIV, elementModel.getNaziv());
+//                intent.putExtra(AddEditActivity.EXTRA_POCETAK, elementModel.getPocetak());
+//                intent.putExtra(AddEditActivity.EXTRA_KRAJ, elementModel.getKraj());
+//                intent.putExtra(AddEditActivity.EXTRA_TAG, elementModel.getTag());
+//                intent.putExtra(AddEditActivity.EXTRA_CURRENT_POSITION, elementModel.getCurrentPosition());
+//                intent.putExtra(AddEditActivity.EXTRA_TOP_POSITION, (adapter.getItemCount() - 1));
+//                Log.d("EDITTOP", "onItemClick: " + adapter.getItemCount());
+//                Log.d("EDITPOS", "onItemClick: " + elementModel.getCurrentPosition());
+//                startActivityForResult(intent, EDIT_ELEMENT_REQUEST);
+//            }
+//        });
+//
+//    }
+//
+//
+//    //missing timestamp update
+//    @Override
+//    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+//        super.onActivityResult(requestCode, resultCode, data);
+//
+//        if (requestCode == ADD_ELEMENT_REQUEST && resultCode == RESULT_OK) {
+//            String naziv = data.getStringExtra(AddEditActivity.EXTRA_NAZIV);
+//            long pocetak = data.getLongExtra(AddEditActivity.EXTRA_POCETAK, 0);
+//            long kraj = data.getLongExtra(AddEditActivity.EXTRA_KRAJ, 0);
+//            String tag = data.getStringExtra(AddEditActivity.EXTRA_TAG);
+//            int position = data.getIntExtra("topPosition", -1);
+//
+//            Log.d("Addedtolist", "onActivityResult: " + position);
+//            ElementModel elementModel = new ElementModel(naziv, pocetak, kraj, tag, position + 1, "0");
+//            elementViewModel.insert(elementModel);
+//            Toast.makeText(this, "Element added", Toast.LENGTH_SHORT).show();
+//
+//        } else if (requestCode == EDIT_ELEMENT_REQUEST && resultCode == RESULT_OK) {
+//
+//            int id = data.getIntExtra(AddEditActivity.EXTRA_ID, -1);
+//            if (id == -1) {
+//                Toast.makeText(this, "Element not updated", Toast.LENGTH_SHORT).show();
+//                return;
+//            }
+//            String naziv = data.getStringExtra(AddEditActivity.EXTRA_NAZIV);
+//            long pocetak = data.getLongExtra(AddEditActivity.EXTRA_POCETAK, 0);
+//            long kraj = data.getLongExtra(AddEditActivity.EXTRA_KRAJ, 0);
+//            String tag = data.getStringExtra(AddEditActivity.EXTRA_TAG);
+//            int currentPosition = data.getIntExtra(AddEditActivity.EXTRA_CURRENT_POSITION, -1);
+//
+//            Log.d("Editedposition", "onActivityResult: " + currentPosition);
+//            ElementModel elementModel = new ElementModel(naziv, pocetak, kraj, tag, currentPosition, "0");
+//            elementModel.setId(id);
+//            elementViewModel.update(elementModel);
+//            Toast.makeText(this, "Element updated", Toast.LENGTH_SHORT).show();
+//
+//        } else {
+//            Toast.makeText(this, "No changes detected", Toast.LENGTH_SHORT).show();
+//        }
+//        floatingActionButton.show();
+//    }
+
+
 }

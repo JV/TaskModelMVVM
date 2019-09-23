@@ -23,6 +23,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.taskmodelmvvm.R;
 import com.example.taskmodelmvvm.persistance.ElementModel;
+
+import com.example.taskmodelmvvm.tasks.OnLongTaskCompleted;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -49,15 +51,10 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
     private int maxNumberOfLines = (int) ((screenWidth / 2) / lineWidth);
 
     public ElementModelRwAdapter(float screenHeight, Context context,
-                                 List<List<Integer>> coordinates, OnLongTaskCompleted longTaskCompleted) {
+                                 List<List<Integer>> coordinates) {
         super(DIFF_CALLBACK);
 
-        this.taskCompleted = longTaskCompleted;
-
         this.context = context;
-//        elementViewModel = ViewModelProviders.of(this.mainActivity).get(ElementViewModel.class);
-
-
         this.screenHeight = screenHeight;
         Gson gson = new Gson();
         this.sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
@@ -227,11 +224,6 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
         }
     }
 
-    public interface OnLongTaskCompleted {
-        void onLongTaskCompleted();
-
-    }
-
     public interface OnItemClickListener {
         void onItemClick(ElementModel elementModel);
     }
@@ -243,5 +235,12 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
     public void setOnLongTaskCompletedListener(OnLongTaskCompleted taskCompleted) {
         this.taskCompleted = taskCompleted;
     }
+
+    public void notifyTaskDone() {
+        if (taskCompleted != null) {
+            taskCompleted.onLongTaskCompleted();
+        }
+    }
+
 
 }
