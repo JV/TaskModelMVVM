@@ -40,36 +40,6 @@ public class ElementModel implements Parcelable {
         this.timestamp = timestamp;
     }
 
-    protected ElementModel(Parcel in) {
-        id = in.readInt();
-        naziv = in.readString();
-        if (in.readByte() == 0) {
-            pocetak = null;
-        } else {
-            pocetak = in.readLong();
-        }
-        if (in.readByte() == 0) {
-            kraj = null;
-        } else {
-            kraj = in.readLong();
-        }
-        tag = in.readString();
-        timestamp = in.readString();
-        currentPosition = in.readInt();
-    }
-
-    public static final Creator<ElementModel> CREATOR = new Creator<ElementModel>() {
-        @Override
-        public ElementModel createFromParcel(Parcel in) {
-            return new ElementModel(in);
-        }
-
-        @Override
-        public ElementModel[] newArray(int size) {
-            return new ElementModel[size];
-        }
-    };
-
     public String getTimestamp() {
         return timestamp;
     }
@@ -129,23 +99,35 @@ public class ElementModel implements Parcelable {
     }
 
     @Override
-    public void writeToParcel(Parcel parcel, int i) {
-        parcel.writeInt(id);
-        parcel.writeString(naziv);
-        if (pocetak == null) {
-            parcel.writeByte((byte) 0);
-        } else {
-            parcel.writeByte((byte) 1);
-            parcel.writeLong(pocetak);
-        }
-        if (kraj == null) {
-            parcel.writeByte((byte) 0);
-        } else {
-            parcel.writeByte((byte) 1);
-            parcel.writeLong(kraj);
-        }
-        parcel.writeString(tag);
-        parcel.writeString(timestamp);
-        parcel.writeInt(currentPosition);
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(this.id);
+        dest.writeString(this.naziv);
+        dest.writeValue(this.pocetak);
+        dest.writeValue(this.kraj);
+        dest.writeString(this.tag);
+        dest.writeString(this.timestamp);
+        dest.writeInt(this.currentPosition);
     }
+
+    protected ElementModel(Parcel in) {
+        this.id = in.readInt();
+        this.naziv = in.readString();
+        this.pocetak = (Long) in.readValue(Long.class.getClassLoader());
+        this.kraj = (Long) in.readValue(Long.class.getClassLoader());
+        this.tag = in.readString();
+        this.timestamp = in.readString();
+        this.currentPosition = in.readInt();
+    }
+
+    public static final Creator<ElementModel> CREATOR = new Creator<ElementModel>() {
+        @Override
+        public ElementModel createFromParcel(Parcel source) {
+            return new ElementModel(source);
+        }
+
+        @Override
+        public ElementModel[] newArray(int size) {
+            return new ElementModel[size];
+        }
+    };
 }

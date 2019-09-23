@@ -84,7 +84,12 @@ public class MainActivity extends AppCompatActivity {
 
 
         elementViewModel = ViewModelProviders.of(this).get(ElementViewModel.class);
-        startLongTask(elementViewModel.getAllElementsList());
+        elementViewModel.getAllElements().observe(this, new Observer<List<ElementModel>>() {
+            @Override
+            public void onChanged(List<ElementModel> elementModels) {
+                startLongTask(elementModels);
+            }
+        });
         getDisplay();
         //load / call  db / net ?
         subscribeObservers();
