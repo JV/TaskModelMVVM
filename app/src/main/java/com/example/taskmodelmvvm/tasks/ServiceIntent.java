@@ -30,7 +30,7 @@ import java.util.Set;
 public class ServiceIntent extends IntentService {
 
     private static final int UI_TASK = 1;
-    private UiHandlerThread uiHandlerThread = new UiHandlerThread(this);
+//    private UiHandlerThread uiHandlerThread = new UiHandlerThread(getApplication().getApplicationContext());
     private SharedPreferences sharedPreferences;
     private List<ElementModel> elementModels = new ArrayList<>();
     private Set<String> differentTagsLimit = new LinkedHashSet<>();
@@ -56,7 +56,7 @@ public class ServiceIntent extends IntentService {
     @Override
     public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
         if (intent.getBooleanExtra("startThread", false)) {
-            uiHandlerThread.start();
+//            uiHandlerThread.start();
             Log.d(TAG, "onStartCommand: thread started");
         }
         return super.onStartCommand(intent, flags, startId);
@@ -124,7 +124,7 @@ public class ServiceIntent extends IntentService {
 
 
             if (intent.getBooleanExtra("stopThread", false)) {
-                uiHandlerThread.quit();
+//                uiHandlerThread.quit();
                 Log.d(TAG, "onHandleIntent:  thread stopped by intent");
                 return;
             }

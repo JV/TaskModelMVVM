@@ -6,43 +6,44 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".MainActivity"
-    >
+    tools:context=".MainActivity">
 
     <include
         android:id="@+id/toolbar"
         layout="@layout/toolbar"></include>
 
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+    <FrameLayout
+        android:id="@+id/content"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/swipeRefresh"
-        android:layout_marginTop="55dp">
-
+        android:layout_height="match_parent">
 
         <androidx.recyclerview.widget.RecyclerView
 
             android:id="@+id/recyclerviewMain"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            tools:listitem="@layout/element_item_card"
-
             android:layout_marginTop="55dp"
-            />
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+            tools:listitem="@layout/element_item_card" />
+
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+
+            android:id="@+id/floating_action_button_main"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|right"
+            android:layout_margin="16dp"
+            app:fabSize="auto"
+            app:layout_behavior="com.example.taskmodelmvvm.viewmodel.FloatingActionButtonScrollBehavior"
+            app:srcCompat="@drawable/ic_add_circle_black_24dp" />
+
+    </FrameLayout>
 
 
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
 
-        android:id="@+id/floating_action_button_main"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|right"
-        android:layout_margin="16dp"
-        app:fabSize="auto"
-        app:layout_behavior="com.example.taskmodelmvvm.viewmodel.FloatingActionButtonScrollBehavior"
-        app:srcCompat="@drawable/ic_add_circle_black_24dp" />
+
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

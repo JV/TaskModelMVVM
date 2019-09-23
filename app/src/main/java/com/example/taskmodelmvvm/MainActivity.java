@@ -23,8 +23,9 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -41,7 +42,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements MainFragment.OnWorkCompletedListener {
 
     // move all to MainFragment
 
@@ -63,42 +64,46 @@ public class MainActivity extends AppCompatActivity {
     private MainActivity mainActivity = this;
     private Bitmap bitmap;
     private boolean mOrderChanged;
+    private List<Fragment> fragments = new ArrayList<>();
+    private FragmentManager fragmentManager;
+
+    private ElementModelRwAdapter.OnLongTaskCompleted longTaskCompleted;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initViews();
 
+        //load prefs for whatever reason?
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-        //show UI on main - start fragment
+        this.getSupportFragmentManager().beginTransaction().add(R.id.activityMain, new MainFragment()).addToBackStack("fragmentMain").commit();
 
-        // start thread from fragment
-        // itereate data in thread started from fragment?
         //
         // listen to long task, update view
 
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         // do from fragment listen to custom handler finished
-        startThread();
+//        startThread();
 
+//
+//        elementViewModel = ViewModelProviders.of(this).get(ElementViewModel.class);
+//        elementViewModel.getAllElements().observe(this, new Observer<List<ElementModel>>() {
+//            @Override
+//            public void onChanged(List<ElementModel> elementModels) {
+//                startLongTask(elementModels);
+//            }
+//        });
+//        getDisplay();
+//        //load / call  db / net ?
+//        subscribeObservers();
 
-        elementViewModel = ViewModelProviders.of(this).get(ElementViewModel.class);
-        elementViewModel.getAllElements().observe(this, new Observer<List<ElementModel>>() {
-            @Override
-            public void onChanged(List<ElementModel> elementModels) {
-                startLongTask(elementModels);
-            }
-        });
-        getDisplay();
-        //load / call  db / net ?
-        subscribeObservers();
-        initViews();
-        setUpScreen();
-        setupListeners();
-
-        // recode to class with static async task?
-        doStuffWithImage();
+//        setUpScreen();
+//        setupListeners();
+//
+//        // recode to class with static async task?
+//        doStuffWithImage();
     }
 
 
@@ -182,14 +187,14 @@ public class MainActivity extends AppCompatActivity {
     private void setUpScreen() {
         setSupportActionBar(toolbar);
         recyclerViewMain.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new ElementModelRwAdapter(screenHeight, this, coordinates, mainActivity);
+        adapter = new ElementModelRwAdapter(screenHeight, this, coordinates, longTaskCompleted);
         recyclerViewMain.setAdapter(adapter);
-        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                getNewerData();
-            }
-        });
+//        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+//            @Override
+//            public void onRefresh() {
+//                getNewerData();
+//            }
+//        });
 
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
 
@@ -219,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
 
-               // move elementViewModel.update();
+                // move elementViewModel.update();
                 mOrderChanged = true;
                 return false;
             }
@@ -250,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        refreshLayout = findViewById(R.id.swipeRefresh);
+//        refreshLayout = findViewById(R.id.swipeRefresh);
         recyclerViewMain = findViewById(R.id.recyclerviewMain);
         floatingActionButton = findViewById(R.id.floating_action_button_main);
         toolbar = findViewById(R.id.toolbar);
@@ -288,12 +293,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        adapter.setOnLongTaskDoneListener(new ElementModelRwAdapter.OnLongTaskDoneListener() {
-            @Override
-            public void onLongTaskDoneListener(ElementModelRwAdapter elementModelRwAdapter) {
-                adapter.notifyDataSetChanged(); // draw lines
-            }
-        });
     }
 
 
@@ -391,5 +390,10 @@ public class MainActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    public void onWorkCompleted(boolean resultCode) {
+        Log.d("MAINACTIV", "onLongTaskCompleted: ");
     }
 }

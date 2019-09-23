@@ -17,12 +17,10 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.taskmodelmvvm.MainActivity;
 import com.example.taskmodelmvvm.R;
 import com.example.taskmodelmvvm.persistance.ElementModel;
 import com.google.gson.Gson;
@@ -32,12 +30,13 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class ElementModelRwAdapter extends ListAdapter<ElementModel,
         ElementModelRwAdapter.ElementHolder> {
 
-
     private OnItemClickListener listener;
-    private OnLongTaskDoneListener taskListener;
+    private OnLongTaskCompleted taskCompleted;
+
     private float screenWidth;
     private float screenHeight;
     private List<List<Integer>> coordinates;
@@ -45,16 +44,16 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
     private SharedPreferences sharedPreferences;
     private Context context;
     private ElementViewModel elementViewModel;
-    private MainActivity mainActivity;
     private List<ElementModel> elementModels = new ArrayList<>();
     private int lineWidth = 10; // takes padding/margin into account
     private int maxNumberOfLines = (int) ((screenWidth / 2) / lineWidth);
 
-
     public ElementModelRwAdapter(float screenHeight, Context context,
-                                 List<List<Integer>> coordinates, MainActivity mainActivity) {
+                                 List<List<Integer>> coordinates, OnLongTaskCompleted longTaskCompleted) {
         super(DIFF_CALLBACK);
-        this.mainActivity = mainActivity;
+
+        this.taskCompleted = longTaskCompleted;
+
         this.context = context;
 //        elementViewModel = ViewModelProviders.of(this.mainActivity).get(ElementViewModel.class);
 
@@ -66,9 +65,6 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
         Type type = new TypeToken<List<List<Integer>>>() {
         }.getType();
         this.coordinates = gson.fromJson(json, type);
-//        if (taskListener != null) {
-//            taskListener.onLongTaskDoneListener(this);
-//        }
     }
 
     private static final DiffUtil.ItemCallback<ElementModel> DIFF_CALLBACK = new DiffUtil.ItemCallback<ElementModel>() {
@@ -102,7 +98,6 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
 
     @Override
     public void onBindViewHolder(@NonNull ElementHolder holder, int position) {
-
 
 
         ElementModel currentElement = getItem(position);
@@ -232,6 +227,11 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
         }
     }
 
+    public interface OnLongTaskCompleted {
+        void onLongTaskCompleted();
+
+    }
+
     public interface OnItemClickListener {
         void onItemClick(ElementModel elementModel);
     }
@@ -240,11 +240,8 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
         this.listener = listener;
     }
 
-    public interface OnLongTaskDoneListener {
-        void onLongTaskDoneListener(ElementModelRwAdapter elementModelRwAdapter);
+    public void setOnLongTaskCompletedListener(OnLongTaskCompleted taskCompleted) {
+        this.taskCompleted = taskCompleted;
     }
 
-    public void setOnLongTaskDoneListener(OnLongTaskDoneListener listener) {
-        this.taskListener = listener;
-    }
 }
