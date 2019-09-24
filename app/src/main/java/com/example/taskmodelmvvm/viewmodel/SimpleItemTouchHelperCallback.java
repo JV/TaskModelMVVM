@@ -2,6 +2,7 @@ package com.example.taskmodelmvvm.viewmodel;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -57,13 +58,15 @@ public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
     @Override
     public void onMoved(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, int fromPos, @NonNull RecyclerView.ViewHolder target, int toPos, int x, int y) {
         super.onMoved(recyclerView, viewHolder, fromPos, target, toPos, x, y);
+        Log.d("DROPPED", "onMoved: DROPPED");
     }
 
     @Override
     public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder,
                           RecyclerView.ViewHolder target) {
 
-        mAdapter.onItemMove(viewHolder.getAdapterPosition(), target.getAdapterPosition());
+        mmAdapter.onItemMove(viewHolder.getAdapterPosition(), target.getAdapterPosition());
+        Log.d("MOVING", "onMove: MOVING");
         mOrderChanged = true;
         return true;
     }
@@ -71,8 +74,9 @@ public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
     @Override
     public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
 
-        mAdapter.onItemDismiss(viewHolder.getAdapterPosition());
+        mmAdapter.onItemDismiss(viewHolder.getAdapterPosition());
 
+        Log.d("SWIPED", "onSwiped: SWIPED");
     }
 
     @Override
@@ -80,6 +84,7 @@ public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
         super.onSelectedChanged(viewHolder, actionState);
         if (actionState == ItemTouchHelper.ACTION_STATE_IDLE && mOrderChanged) {
 
+            Log.d("SELECTED", "onSelectedChanged: SELECTED");
             mOrderChanged = false;
         }
     }

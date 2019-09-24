@@ -188,20 +188,24 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
         return getItem(position);
     }
 
+
+
+
+
     @Override
     public void onItemMove(int oldPosition, int newPosition) {
 
-//        if (oldPosition < newPosition) {
-//            for (int i = oldPosition; i < newPosition; i++) {
-//                Collections.swap(elementViewModel.getAllElementsList(), i, i + 1);
-//            }
-//        } else {
-//            for (int i = oldPosition; i > newPosition; i--) {
-//                Collections.swap(elementViewModel.getAllElementsList(), i, i - 1);
-//            }
-//        }
-//
-//        elementViewModel.moveElement(oldPosition, newPosition);
+        if (oldPosition < newPosition) {
+            for (int i = oldPosition; i < newPosition; i++) {
+                Collections.swap(elementViewModel.getAllElementsList(), i, i + 1);
+            }
+        } else {
+            for (int i = oldPosition; i > newPosition; i--) {
+                Collections.swap(elementViewModel.getAllElementsList(), i, i - 1);
+            }
+        }
+
+        elementViewModel.moveElement(oldPosition, newPosition);
     }
 
     @Override

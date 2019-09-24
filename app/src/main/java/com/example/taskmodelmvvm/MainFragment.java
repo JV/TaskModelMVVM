@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Display;
@@ -17,7 +16,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
@@ -29,7 +27,6 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.taskmodelmvvm.persistance.AddEditActivity;
 import com.example.taskmodelmvvm.persistance.ElementModel;
 import com.example.taskmodelmvvm.tasks.OnLongTaskCompleted;
-import com.example.taskmodelmvvm.tasks.ServiceIntent;
 import com.example.taskmodelmvvm.tasks.WorkTask;
 import com.example.taskmodelmvvm.viewmodel.ElementModelRwAdapter;
 import com.example.taskmodelmvvm.viewmodel.ElementViewModel;
@@ -125,12 +122,7 @@ public class MainFragment extends Fragment {
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchHelperCallback);
         recyclerViewMain.setAdapter(adapter);
         itemTouchHelper.attachToRecyclerView(recyclerViewMain);
-//        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-//            @Override
-//            public void onRefresh() {
-//
-//            }
-//        });
+
     }
 
     private void getDisplay() {
@@ -183,9 +175,22 @@ public class MainFragment extends Fragment {
             @Override
             public void onLongTaskCompleted() {
 
-//                recyclerViewMain.setAdapter(recyclerViewMain.getAdapter());
+                RecyclerView.Adapter adapter1 = recyclerViewMain.getAdapter();
+                recyclerViewMain.setAdapter(null);
+                recyclerViewMain.setAdapter(adapter1);
+
 
                 Log.d("TASKRECEIVEDBACK", "onLongTaskCompleted: RECEIVED");
+            }
+        });
+
+        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                RecyclerView.Adapter adapter1 = recyclerViewMain.getAdapter();
+                recyclerViewMain.setAdapter(null);
+                recyclerViewMain.setAdapter(adapter1);
+
             }
         });
     }
