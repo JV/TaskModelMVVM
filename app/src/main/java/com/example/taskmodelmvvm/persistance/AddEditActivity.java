@@ -3,6 +3,7 @@ package com.example.taskmodelmvvm.persistance;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -112,7 +113,8 @@ public class AddEditActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         int currentPosition = intent.getIntExtra(EXTRA_CURRENT_POSITION, -1);
-        int topPosition = intent.getIntExtra("topPosition", -1) +1;
+        int topPosition = intent.getIntExtra(EXTRA_TOP_POSITION, -1) +1;
+        Log.d("TOPCHECKINADD", "saveElement: " + topPosition);
 
         String naziv = etNaziv.getText().toString();
         Long pocetak = Long.valueOf(etPocetak.getText().toString());
@@ -153,7 +155,7 @@ public class AddEditActivity extends AppCompatActivity {
         data.putExtra(EXTRA_KRAJ, kraj);
         data.putExtra(EXTRA_TAG, tag);
         data.putExtra(EXTRA_CURRENT_POSITION, currentPosition);
-
+        data.putExtra(EXTRA_TOP_POSITION, topPosition);
 
         int id = getIntent().getIntExtra(EXTRA_ID, -1);
         if(id != -1) {

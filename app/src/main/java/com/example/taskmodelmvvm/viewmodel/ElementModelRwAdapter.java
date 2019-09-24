@@ -8,6 +8,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,11 +31,12 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
 public class ElementModelRwAdapter extends ListAdapter<ElementModel,
-        ElementModelRwAdapter.ElementHolder> {
+        ElementModelRwAdapter.ElementHolder> implements SimpleItemTouchHelperCallback.ItemTouchHelperAdapter {
 
     private OnItemClickListener listener;
     private OnLongTaskCompleted taskCompleted;
@@ -51,9 +53,12 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
     private int maxNumberOfLines = (int) ((screenWidth / 2) / lineWidth);
 
     public ElementModelRwAdapter(float screenHeight, Context context,
-                                 List<List<Integer>> coordinates) {
+                                 List<List<Integer>> coordinates, ElementViewModel elementViewModel) {
+
+
         super(DIFF_CALLBACK);
 
+        this.elementViewModel = elementViewModel;
         this.context = context;
         this.screenHeight = screenHeight;
         Gson gson = new Gson();
@@ -78,7 +83,8 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
             return oldItem.getNaziv().equals(newItem.getNaziv()) &&
                     oldItem.getPocetak().equals(newItem.getPocetak()) &&
                     oldItem.getKraj().equals(newItem.getKraj()) &&
-                    oldItem.getTag().equals(newItem.getTag());
+                    oldItem.getTag().equals(newItem.getTag()) &&
+                    oldItem.getTimestamp().equals(newItem.getTimestamp());
         }
     };
 
@@ -98,6 +104,7 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
 
 
         ElementModel currentElement = getItem(position);
+
         Gson gson = new Gson();
         String json = sharedPreferences.getString("CoordinatesList", "");
         Type type = new TypeToken<List<List<Integer>>>() {
@@ -179,6 +186,29 @@ public class ElementModelRwAdapter extends ListAdapter<ElementModel,
 
     public ElementModel getElementAt(int position) {
         return getItem(position);
+    }
+
+    @Override
+    public void onItemMove(int oldPosition, int newPosition) {
+
+//        if (oldPosition < newPosition) {
+//            for (int i = oldPosition; i < newPosition; i++) {
+//                Collections.swap(elementViewModel.getAllElementsList(), i, i + 1);
+//            }
+//        } else {
+//            for (int i = oldPosition; i > newPosition; i--) {
+//                Collections.swap(elementViewModel.getAllElementsList(), i, i - 1);
+//            }
+//        }
+//
+//        elementViewModel.moveElement(oldPosition, newPosition);
+    }
+
+    @Override
+    public void onItemDismiss(int position) {
+        elementViewModel.delete(getElementAt(position));
+        Log.d("DELETE", "onItemDismiss: DELETED");
+
     }
 
     class ElementHolder extends RecyclerView.ViewHolder {

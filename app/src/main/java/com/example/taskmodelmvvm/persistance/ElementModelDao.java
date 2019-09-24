@@ -30,16 +30,20 @@ public interface ElementModelDao {
     @Query("SELECT * FROM element_table ORDER BY pocetak DESC")
     LiveData<List<ElementModel>> getAllElements();
 
+    // select list only
 
     @Query("SELECT * FROM element_table ORDER BY pocetak DESC")
     List<ElementModel> getAllElementsList();
 
+    //select user edited list, reordered
 
     @Query("SELECT * FROM element_table ORDER BY current_position DESC")
     LiveData<List<ElementModel>> getAllElementsMoved();
+    //select list sublist, search for tag
 
     @Query("SELECT * FROM element_table WHERE tag = :tag")
     LiveData<List<ElementModel>> getAllElementsQuerryTag(String tag);
+    //select list sublist, search for name
 
     @Query("SELECT * FROM element_table WHERE naziv LIKE :naziv")
     LiveData<List<ElementModel>> getAllElementsQuerryName(String naziv);

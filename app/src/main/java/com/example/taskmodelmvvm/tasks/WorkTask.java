@@ -34,7 +34,6 @@ public class WorkTask extends AsyncTask<Object, Object, Object> {
     public WorkTask(Context context, List<ElementModel> elementModels, ElementModelRwAdapter adapter) {
         this.elementModels = elementModels;
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-
         this.adapter = adapter;
     }
 

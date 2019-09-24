@@ -1,15 +1,15 @@
 package com.example.taskmodelmvvm.persistance;
 
-import android.app.Application;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -83,6 +83,7 @@ public class ElementModelRepository {
 
         private MoveAsyncTask(ElementModelDao elementModelDao) {
             this.elementModelDao = elementModelDao;
+
         }
 
         @RequiresApi(api = Build.VERSION_CODES.N)
@@ -92,9 +93,35 @@ public class ElementModelRepository {
             int from = params[0];
             int to = params[1];
 
-            if (from > to) {
+            if (from < to) {
+                for (int i = from; i < to; i++) {
+                    Collections.swap(elementModelDao.getAllElementsList(), i, i + 1);
 
+                    int order1 = elementModelDao.getAllElementsList().get(i).getCurrentPosition();
+                    int order2 = elementModelDao.getAllElementsList().get(i + 1).getCurrentPosition();
+                    elementModelDao.getAllElementsList().get(i).setCurrentPosition(order2);
+                    elementModelDao.getAllElementsList().get(i + 1).setCurrentPosition(order1);
 
+                    elementModelDao.update(elementModelDao.getAllElementsList().get(i));
+                    elementModelDao.update(elementModelDao.getAllElementsList().get(i + 1));
+
+                    Log.d("BCGMOVE", "doInBackground: " + elementModelDao.getAllElementsList().toString());
+
+                }
+            } else {
+                for (int i = from; i > to; i--) {
+                    Collections.swap(elementModelDao.getAllElementsList(), i, i - 1);
+
+                    int order1 = elementModelDao.getAllElementsList().get(i).getCurrentPosition();
+                    int order2 = elementModelDao.getAllElementsList().get(i - 1).getCurrentPosition();
+                    elementModelDao.getAllElementsList().get(i).setCurrentPosition(order2);
+                    elementModelDao.getAllElementsList().get(i - 1).setCurrentPosition(order1);
+
+                    elementModelDao.update(elementModelDao.getAllElementsList().get(i));
+                    elementModelDao.update(elementModelDao.getAllElementsList().get(i - 1));
+
+                    Log.d("BCGMOVE", "doInBackground: " + elementModelDao.getAllElementsList().toString());
+                }
             }
 
             return null;
