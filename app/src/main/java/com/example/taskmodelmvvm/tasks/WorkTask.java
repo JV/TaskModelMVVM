@@ -49,7 +49,6 @@ public class WorkTask extends AsyncTask<Object, Object, Object> {
     protected void onPostExecute(Object o) {
 
         adapter.notifyTaskDone();
-
     }
 
     private void performLongTask(List<ElementModel> elementModels) {
@@ -97,17 +96,19 @@ public class WorkTask extends AsyncTask<Object, Object, Object> {
         for (int j = 0; j < elementModels.size(); j++) {
 
             int distanceFromEnd = elementModels.size() - 1 - coordinates.get(tagPosition).get(0);
-
             String searchTarget = allTags.get(tagPosition);
             secondPosition = elementModels.get(j).getTag().equals(searchTarget);
 
             if (secondPosition) {
 
                 if (j == distanceFromEnd) {
+
                     coordinates.get(tagPosition).add(-1);
                     reverseList(elementModels);
                     return;
+
                 } else {
+
                     int secondPositionC = elementModels.size() - j - 1;
                     coordinates.get(tagPosition).add(secondPositionC);
                     reverseList(elementModels);
@@ -176,5 +177,4 @@ public class WorkTask extends AsyncTask<Object, Object, Object> {
         editor.putString("DifferentTagList", json);
         editor.commit();
     }
-
 }

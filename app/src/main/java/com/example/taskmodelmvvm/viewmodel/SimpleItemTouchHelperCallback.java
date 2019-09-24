@@ -2,30 +2,27 @@ package com.example.taskmodelmvvm.viewmodel;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Bundle;
-import android.os.Message;
-import android.preference.PreferenceManager;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.taskmodelmvvm.persistance.ElementModel;
-import com.google.gson.Gson;
 
-import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
 
     private ItemTouchHelperAdapter mAdapter;
-    Context mContext;
+    private Context mContext;
     private boolean mOrderChanged;
 
     private List<ElementModel> elementModels;
-    ElementModelRwAdapter mmAdapter;
-    RecyclerView recyclerViewMain;
-    SharedPreferences sharedPreferences;
+    private ElementModelRwAdapter mmAdapter;
+    private RecyclerView recyclerViewMain;
+    private SharedPreferences sharedPreferences;
 
 
     public SimpleItemTouchHelperCallback(ItemTouchHelperAdapter adapter, Context context,
@@ -58,6 +55,11 @@ public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
     }
 
     @Override
+    public void onMoved(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, int fromPos, @NonNull RecyclerView.ViewHolder target, int toPos, int x, int y) {
+        super.onMoved(recyclerView, viewHolder, fromPos, target, toPos, x, y);
+    }
+
+    @Override
     public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder,
                           RecyclerView.ViewHolder target) {
 
@@ -78,13 +80,6 @@ public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
         super.onSelectedChanged(viewHolder, actionState);
         if (actionState == ItemTouchHelper.ACTION_STATE_IDLE && mOrderChanged) {
 
-            sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            Gson gson = new Gson();
-            String json = gson.toJson(elementModels);
-            editor.putString("MyObjectsList", json);
-            editor.apply();
-
             mOrderChanged = false;
         }
     }
@@ -92,6 +87,7 @@ public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
     public interface ItemTouchHelperAdapter {
 
         void onItemMove(int oldPosition, int newPosition);
+
         void onItemDismiss(int position);
     }
 }
